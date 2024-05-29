@@ -1,6 +1,6 @@
 # Final Project Teknik Pemodelan dan Simulasi
 
-Simulasi untuk mencari cara paling efisien untuk menurunkan dan menaikkan penumpang pada kereta api prameks di stasiun yogyakarta
+Simulasi untuk menemukan cara paling efisien untuk menurunkan dan menaikkan penumpang di Kereta Api Prameks di Stasiun Yogyakarta.
 
 Anggota 1: Thoriqutsani Anastyo Rasnan - 21/479154/TK/52816
 
