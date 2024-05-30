@@ -1,6 +1,86 @@
 import pygame
 import random
 
+def collision(passenger_positions, waiter_positions, collision_radius=20):
+    # Check collision between passengers and waiters
+    for passenger_pos in passenger_positions:
+        for waiter_pos in waiter_positions:
+            # Calculate distance between passenger and waiter
+            distance_x = abs(passenger_pos[0] - waiter_pos[0])
+            distance_y = abs(passenger_pos[1] - waiter_pos[1])
+            distance = ((distance_x ** 2) + (distance_y ** 2)) ** 0.5
+
+            # Check if the distance is less than the sum of their collision radii
+            if distance < collision_radius * 2:
+                return True
+    return False
+
+def update_train_pos(train, target_train_x, train_speed):
+    # Update the train's position
+    if train.x > target_train_x:
+        train.x -= train_speed
+        if train.x <= target_train_x:
+            train.x = target_train_x
+
+def move_waiter(waiter_positions, seat_positions, center, waiter_speed, train):
+    for i, pos in enumerate(waiter_positions):
+        if center[i]:
+            if pos[0] < seat_positions[i][0] + 23:
+                pos[0] += waiter_speed[i]
+            elif pos[0] > seat_positions[i][0] + 27:
+                pos[0] -= waiter_speed[i]
+            elif pos[0] >= seat_positions[i][0] + 23 and pos[0] <= seat_positions[i][0] + 27:   
+                if pos[1] < seat_positions[i][1] + 23:
+                    pos[1] += waiter_speed[i]
+                elif pos[1] > seat_positions[i][1] + 27:
+                    pos[1] -= waiter_speed[i]
+        elif i < len(waiter_positions) // 2:
+            # Move to the left entrance door
+            if pos[0] > train.x + 110:
+                pos[0] -= waiter_speed[i]
+            elif pos[0] < train.x + 100:
+                pos[0] += waiter_speed[i]
+            elif pos[0] <= train.x + 110 and pos[0] >= train.x + 100:
+                pos[1] -= waiter_speed[i]
+                if pos[1] >= train.y + 148 and pos[1] <= train.y + 152:
+                    center[i] = True 
+        else:
+            # Move to the right entrance door
+            if pos[0] < train.x + 885:
+                pos[0] += waiter_speed[i]
+            elif pos[0] > train.x + 890:
+                pos[0] -= waiter_speed[i]
+            elif pos[0] <= train.x + 890 and pos[0] >= train.x + 885:
+                pos[1] -= waiter_speed[i]
+                if pos[1] >= train.y + 148 and pos[1] <= train.y + 152:
+                    center[i] = True
+
+def move_passenger(passenger_positions, center_p, train, passenger_speed):
+    for i, pos in enumerate(passenger_positions):
+        if not center_p[i]:
+            if pos[1] < train.y + 148:
+                pos[1] += passenger_speed[i]
+            elif pos[1] > train.y + 152:
+                pos[1] -= passenger_speed[i]
+            elif pos[1] >= train.y + 148 and pos[1] <= train.y + 152:   
+                center_p[i] = True
+        elif i < len(passenger_positions) // 2:
+            # Move to the left exit door
+            if pos[0] > train.x + 110:
+                pos[0] -= passenger_speed[i]
+            elif pos[0] < train.x + 100:
+                pos[0] += passenger_speed[i]
+            elif pos[0] >= train.x + 100 and pos[0] <= train.x +110:
+                pos[1] -= passenger_speed[i]
+        else:
+            # Move to the right exit door
+            if pos[0] < train.x + 885:
+                pos[0] += passenger_speed[i]
+            elif pos[0] > train.x + 890:
+                pos[0] -= passenger_speed[i]
+            elif pos[0] >= train.x + 885 and pos[0] <= train.x + 890:
+                pos[1] -= passenger_speed[i]
+
 def main():
     # pygame setup
     pygame.init()
@@ -80,132 +160,87 @@ def main():
     waiter_speed = [random.randint(1, 3) for i in range(48)]
 
     reached_target = False
-    start_time = pygame.time.get_ticks()
 
     open_entrance = False
 
+    paused = False
+
+    # Define font for the message
+    font = pygame.font.Font(None, 36)
+
     while running:
-        elapsed_time = (pygame.time.get_ticks() - start_time) / 1000
         # Poll for events
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            if event.type == pygame.QUIT or (paused and event.type == pygame.KEYUP):
                 running = False
-            if event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
-                    open_entrance = True
+            if reached_target and event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
+                open_entrance = True
 
-        # Update the train's position
-        if train.x > target_train_x:
-            train.x -= train_speed
-            if train.x <= target_train_x:
-                train.x = target_train_x
+        if not paused:
+            # Fill the screen with a color to wipe away anything from last frame
+            screen.fill("grey")
+
+            # Draw the train
+            pygame.draw.rect(screen, pygame.Color(255, 0, 0), train)
+
+            # Update train position
+            update_train_pos(train, target_train_x, train_speed)
+            if train.x == target_train_x:
                 reached_target = True
 
-        # Fill the screen with a color to wipe away anything from last frame
-        screen.fill("grey")
+            # Draw the entrance doors
+            if not open_entrance:
+                pygame.draw.line(screen, closed_door_color, [train.x + 90, 510], [train.x + 140, 510], 5)
+                pygame.draw.line(screen, closed_door_color, [train.x + 860, 510], [train.x + 910, 510], 5)
+            else:
+                pygame.draw.line(screen, open_door_color, [train.x + 90, 510], [train.x + 140, 510], 5)
+                pygame.draw.line(screen, open_door_color, [train.x + 860, 510], [train.x + 910, 510], 5)
+                if reached_target:
+                    move_waiter(waiter_positions, seat_positions, center, waiter_speed, train)
 
-        # Draw the train
-        pygame.draw.rect(screen, pygame.Color(255, 0, 0), train)
+            # Draw the platform
+            pygame.draw.rect(screen, pygame.Color(20, 20, 20), top_platform)
+            pygame.draw.rect(screen, pygame.Color(20, 20, 20), bot_platform)
 
-        # Draw the entrance doors
-        if not open_entrance:
-            pygame.draw.line(screen, closed_door_color, [train.x + 90, 510], [train.x + 140, 510], 5)
-            pygame.draw.line(screen, closed_door_color, [train.x + 860, 510], [train.x + 910, 510], 5)
-        else:
-            pygame.draw.line(screen, open_door_color, [train.x + 90, 510], [train.x + 140, 510], 5)
-            pygame.draw.line(screen, open_door_color, [train.x + 860, 510], [train.x + 910, 510], 5)
+            # Draw the yellow marker line
+            pygame.draw.line(screen, pygame.Color(255, 255, 0), [0, 150], [1280, 150], 5)
+            pygame.draw.line(screen, pygame.Color(255, 255, 0), [0, 570], [1280, 570], 5)
+
+            # Draw the seats
+            for pos in seat_positions:
+                # Adjust seat positions relative to the moving train
+                seat_rect = pygame.Rect([pos[0] + (train.x - target_train_x), pos[1], seat_size[0], seat_size[1]])
+                # Draw seat
+                pygame.draw.rect(screen, pygame.Color(200, 200, 200), seat_rect)
+
+            # Move passengers to exit if the train has reached the target position
             if reached_target:
-                for i, pos in enumerate(waiter_positions):
-                    if center[i]:
-                        if pos[0] < seat_positions[i][0] + 23:
-                            pos[0] += waiter_speed[i]
-                        elif pos[0] > seat_positions[i][0] + 27:
-                            pos[0] -= waiter_speed[i]
-                        elif pos[0] >= seat_positions[i][0] + 23 and pos[0] <= seat_positions[i][0] + 27:   
-                            if pos[1] < seat_positions[i][1] + 23:
-                                pos[1] += waiter_speed[i]
-                            elif pos[1] > seat_positions[i][1] + 27:
-                                pos[1] -= waiter_speed[i]
-                    elif i < len(waiter_positions) // 2:
-                        # Move to the left entrance door
-                        if pos[0] > train.x + 110:
-                            pos[0] -= waiter_speed[i]
-                        elif pos[0] < train.x + 100:
-                            pos[0] += waiter_speed[i]
-                        elif pos[0] <= train.x + 110 and pos[0] >= train.x + 100:
-                            pos[1] -= waiter_speed[i]
-                            if pos[1] >= train.y + 148 and pos[1] <= train.y + 152:
-                                center[i] = True 
-                    else:
-                        # Move to the right entrance door
-                        if pos[0] < train.x + 885:
-                            pos[0] += waiter_speed[i]
-                        elif pos[0] > train.x + 890:
-                            pos[0] -= waiter_speed[i]
-                        elif pos[0] <= train.x + 890 and pos[0] >= train.x + 885:
-                            pos[1] -= waiter_speed[i]
-                            if pos[1] >= train.y + 148 and pos[1] <= train.y + 152:
-                                center[i] = True
+                # Draw the exit doors
+                pygame.draw.line(screen, open_door_color, [train.x + 90, 210], [train.x + 140, 210], 5)
+                pygame.draw.line(screen, open_door_color, [train.x + 860, 210], [train.x + 910, 210], 5)
+                move_passenger(passenger_positions, center_p, train, passenger_speed)
+            else:
+                # Draw the exit doors
+                pygame.draw.line(screen, closed_door_color, [train.x + 90, 210], [train.x + 140, 210], 5)
+                pygame.draw.line(screen, closed_door_color, [train.x + 860, 210], [train.x + 910, 210], 5)
 
-        # Draw the platform
-        pygame.draw.rect(screen, pygame.Color(20, 20, 20), top_platform)
-        pygame.draw.rect(screen, pygame.Color(20, 20, 20), bot_platform)
+            # Draw the passengers
+            for pos in passenger_positions:
+                # Adjust passenger positions relative to the moving train
+                adjusted_pos = [pos[0] + (train.x - target_train_x), pos[1]]
+                # Draw passenger
+                pygame.draw.circle(screen, pygame.Color(0, 255, 0), adjusted_pos, passenger_radius)
 
-        # Draw the yellow marker line
-        pygame.draw.line(screen, pygame.Color(255, 255, 0), [0, 150], [1280, 150], 5)
-        pygame.draw.line(screen, pygame.Color(255, 255, 0), [0, 570], [1280, 570], 5)
+            # Draw the waiting passengers
+            for pos in waiter_positions:
+                # Draw waiting passenger
+                pygame.draw.circle(screen, pygame.Color(0, 0, 255), pos, passenger_radius)
 
-        # Draw the seats
-        for pos in seat_positions:
-            # Adjust seat positions relative to the moving train
-            seat_rect = pygame.Rect([pos[0] + (train.x - target_train_x), pos[1], seat_size[0], seat_size[1]])
-            # Draw seat
-            pygame.draw.rect(screen, pygame.Color(200, 200, 200), seat_rect)
-
-        # Draw the passengers
-        for pos in passenger_positions:
-            # Adjust passenger positions relative to the moving train
-            adjusted_pos = [pos[0] + (train.x - target_train_x), pos[1]]
-            # Draw passenger
-            pygame.draw.circle(screen, pygame.Color(255, 255, 255), adjusted_pos, passenger_radius)
-
-        # Draw the waiting passengers
-        for pos in waiter_positions:
-            # Draw waiting passenger
-            pygame.draw.circle(screen, pygame.Color(255, 255, 255), pos, passenger_radius)
-
-        # Move passengers to exit if the train has reached the target position
-        if reached_target:
-            # Draw the exit doors
-            pygame.draw.line(screen, open_door_color, [train.x + 90, 210], [train.x + 140, 210], 5)
-            pygame.draw.line(screen, open_door_color, [train.x + 860, 210], [train.x + 910, 210], 5)
-            for i, pos in enumerate(passenger_positions):
-                if not center_p[i]:
-                    if pos[1] < train.y + 148:
-                        pos[1] += passenger_speed[i]
-                    elif pos[1] > train.y + 152:
-                        pos[1] -= passenger_speed[i]
-                    elif pos[1] >= train.y + 148 and pos[1] <= train.y + 152:   
-                        center_p[i] = True
-                elif i < len(passenger_positions) // 2:
-                    # Move to the left exit door
-                    if pos[0] > train.x + 110:
-                        pos[0] -= passenger_speed[i]
-                    elif pos[0] < train.x + 100:
-                        pos[0] += passenger_speed[i]
-                    elif pos[0] >= train.x + 100 and pos[0] <= train.x +110:
-                        pos[1] -= passenger_speed[i]
-                else:
-                    # Move to the right exit door
-                    if pos[0] < train.x + 885:
-                        pos[0] += passenger_speed[i]
-                    elif pos[0] > train.x + 890:
-                        pos[0] -= passenger_speed[i]
-                    elif pos[0] >= train.x + 885 and pos[0] <= train.x + 890:
-                        pos[1] -= passenger_speed[i]
-        else:
-            # Draw the exit doors
-            pygame.draw.line(screen, closed_door_color, [train.x + 90, 210], [train.x + 140, 210], 5)
-            pygame.draw.line(screen, closed_door_color, [train.x + 860, 210], [train.x + 910, 210], 5)
+            if collision(passenger_positions, waiter_positions):
+                # Display message on screen
+                message = font.render("Collision between passenger and waiter!", True, (255, 255, 255))
+                screen.blit(message, (400, 50))  # Adjust position as needed
+                paused = True
 
         # Flip the display to put your work on screen
         pygame.display.flip()
