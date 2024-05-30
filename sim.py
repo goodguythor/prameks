@@ -54,27 +54,25 @@ def main():
     ]
 
     waiter_positions = [
-        [100, 590], [100, 630], [100, 670], 
-        [140, 590], [140, 630], [140, 670], 
+        [140, 590], [140, 630], [140, 670],
         [180, 590], [180, 630], [180, 670], 
         [220, 590], [220, 630], [220, 670], 
         [260, 590], [260, 630], [260, 670], 
         [300, 590], [300, 630], [300, 670], 
         [340, 590], [340, 630], [340, 670], 
         [380, 590], [380, 630], [380, 670],
-        [420, 590], [420, 630], [420, 670], 
-        [460, 590], [460, 630], [460, 670],
-        [820, 590], [820, 630], [820, 670],
-        [860, 590], [860, 630], [860, 670],
+        [420, 590], [420, 630], [420, 670],
+        [860, 590], [860, 630], [860, 670],  
         [900, 590], [900, 630], [900, 670], 
         [940, 590], [940, 630], [940, 670], 
         [980, 590], [980, 630], [980, 670], 
         [1020, 590], [1020, 630], [1020, 670], 
         [1060, 590], [1060, 630], [1060, 670], 
         [1100, 590], [1100, 630], [1100, 670],
-        [1140, 590], [1140, 630], [1140, 670],
-        [1180, 590], [1180, 630], [1180, 670]
+        [1140, 590], [1140, 630], [1140, 670]
     ]
+
+    center = [False for i in range(48)]
 
     reached_target = False
     start_time = pygame.time.get_ticks()
@@ -100,6 +98,20 @@ def main():
         # Draw the train
         pygame.draw.rect(screen, pygame.Color(255, 0, 0), train)
 
+        # Draw the seats
+        for pos in seat_positions:
+            # Adjust seat positions relative to the moving train
+            seat_rect = pygame.Rect([pos[0] + (train.x - target_train_x), pos[1], seat_size[0], seat_size[1]])
+            # Draw seat
+            pygame.draw.rect(screen, pygame.Color(200, 200, 200), seat_rect)
+
+        # Draw the passengers
+        for pos in passenger_positions:
+            # Adjust passenger positions relative to the moving train
+            adjusted_pos = [pos[0] + (train.x - target_train_x), pos[1]]
+            # Draw passenger
+            pygame.draw.circle(screen, pygame.Color(255, 255, 255), adjusted_pos, passenger_radius)
+
         # Draw the entrance doors
         if elapsed_time <= 15:
             pygame.draw.line(screen, closed_door_color, [train.x + 90, 510], [train.x + 140, 510], 5)
@@ -107,6 +119,36 @@ def main():
         else:
             pygame.draw.line(screen, open_door_color, [train.x + 90, 510], [train.x + 140, 510], 5)
             pygame.draw.line(screen, open_door_color, [train.x + 860, 510], [train.x + 910, 510], 5)
+            for i, pos in enumerate(waiter_positions):
+                if center[i]:
+                    if pos[0] < seat_positions[i][0] + 25:
+                        pos[0] += 1
+                    elif pos[0] > seat_positions[i][0] + 25:
+                        pos[0] -= 1
+                    elif pos[1] < seat_positions[i][1] + 25:
+                        pos[1] += 1
+                    elif pos[1] > seat_positions[i][1] + 25:
+                        pos[1] -= 1
+                elif i < len(waiter_positions) // 2:
+                    # Move to the left entrance door
+                    if pos[0] > train.x + 110:
+                        pos[0] -= 1
+                    elif pos[0] == train.x + 110:
+                        pos[1] -= 1
+                        if pos[1] == train.y + 150:
+                            center[i] = True 
+                    else:
+                        pos[0] += 1
+                else:
+                    # Move to the right entrance door
+                    if pos[0] < train.x + 885:
+                        pos[0] += 1
+                    elif pos[0] == train.x + 885:
+                        pos[1] -= 1
+                        if pos[1] == train.y + 150:
+                            center[i] = True
+                    else:
+                        pos[0] -= 1
 
         # Draw the platform
         pygame.draw.rect(screen, pygame.Color(175, 100, 0), top_platform)
@@ -147,20 +189,6 @@ def main():
             # Draw the exit doors
             pygame.draw.line(screen, closed_door_color, [train.x + 90, 210], [train.x + 140, 210], 5)
             pygame.draw.line(screen, closed_door_color, [train.x + 860, 210], [train.x + 910, 210], 5)
-
-        # Draw the seats
-        for pos in seat_positions:
-            # Adjust seat positions relative to the moving train
-            seat_rect = pygame.Rect([pos[0] + (train.x - target_train_x), pos[1], seat_size[0], seat_size[1]])
-            # Draw seat
-            pygame.draw.rect(screen, pygame.Color(200, 200, 200), seat_rect)
-
-        # Draw the passengers
-        for pos in passenger_positions:
-            # Adjust passenger positions relative to the moving train
-            adjusted_pos = [pos[0] + (train.x - target_train_x), pos[1]]
-            # Draw passenger
-            pygame.draw.circle(screen, pygame.Color(255, 255, 255), adjusted_pos, passenger_radius)
 
         # Flip the display to put your work on screen
         pygame.display.flip()
