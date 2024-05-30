@@ -20,6 +20,9 @@ def main():
     passenger_radius = 20
     seat_size = (50, 50)
 
+    open_door_color = pygame.Color(0, 255, 0)
+    closed_door_color = pygame.Color(255, 0, 0)
+
     passenger_positions = [
         [180, 240], [180, 300], [180, 420], [180, 480],
         [330, 240], [330, 300], [330, 420], [330, 480],
@@ -74,8 +77,10 @@ def main():
     ]
 
     reached_target = False
+    start_time = pygame.time.get_ticks()
 
     while running:
+        elapsed_time = (pygame.time.get_ticks() - start_time) / 1000
         # Poll for events
         for event in pygame.event.get():
             print(event)
@@ -95,19 +100,13 @@ def main():
         # Draw the train
         pygame.draw.rect(screen, pygame.Color(255, 0, 0), train)
 
-        # Determine door colors based on train position
-        if train.x == target_train_x:
-            exit_door_color = pygame.Color(0, 255, 0)
-        else:
-            exit_door_color = pygame.Color(255, 0, 0)
-
-        # Draw the exit doors
-        pygame.draw.line(screen, exit_door_color, [train.x + 90, 210], [train.x + 140, 210], 5)
-        pygame.draw.line(screen, exit_door_color, [train.x + 860, 210], [train.x + 910, 210], 5)
-
         # Draw the entrance doors
-        pygame.draw.line(screen, pygame.Color(255, 0, 0), [train.x + 90, 510], [train.x + 140, 510], 5)
-        pygame.draw.line(screen, pygame.Color(255, 0, 0), [train.x + 860, 510], [train.x + 910, 510], 5)
+        if elapsed_time <= 15:
+            pygame.draw.line(screen, closed_door_color, [train.x + 90, 510], [train.x + 140, 510], 5)
+            pygame.draw.line(screen, closed_door_color, [train.x + 860, 510], [train.x + 910, 510], 5)
+        else:
+            pygame.draw.line(screen, open_door_color, [train.x + 90, 510], [train.x + 140, 510], 5)
+            pygame.draw.line(screen, open_door_color, [train.x + 860, 510], [train.x + 910, 510], 5)
 
         # Draw the platform
         pygame.draw.rect(screen, pygame.Color(175, 100, 0), top_platform)
@@ -124,15 +123,30 @@ def main():
 
         # Move passengers to exit if the train has reached the target position
         if reached_target:
+            # Draw the exit doors
+            pygame.draw.line(screen, open_door_color, [train.x + 90, 210], [train.x + 140, 210], 5)
+            pygame.draw.line(screen, open_door_color, [train.x + 860, 210], [train.x + 910, 210], 5)
             for i, pos in enumerate(passenger_positions):
                 if i < len(passenger_positions) // 2:
                     # Move to the left exit door
-                    if pos[0] > train.x + 90:
+                    if pos[0] > train.x + 110:
                         pos[0] -= 1
+                    elif pos[0] == train.x + 110:
+                        pos[1] -= 1
+                    else:
+                        pos[0] +=1
                 else:
                     # Move to the right exit door
-                    if pos[0] < train.x + 910:
+                    if pos[0] < train.x + 885:
                         pos[0] += 1
+                    elif pos[0] ==train.x + 885:
+                        pos[1] -=1
+                    else:
+                        pos[0] -= 1
+        else:
+            # Draw the exit doors
+            pygame.draw.line(screen, closed_door_color, [train.x + 90, 210], [train.x + 140, 210], 5)
+            pygame.draw.line(screen, closed_door_color, [train.x + 860, 210], [train.x + 910, 210], 5)
 
         # Draw the seats
         for pos in seat_positions:
