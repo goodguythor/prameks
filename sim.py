@@ -115,7 +115,7 @@ def main():
     train_y = 210  # Fixed Y position
     train_width = 1000
     train_height = 300
-    train_speed = (initial_train_x - target_train_x) / (5 * 60)  # Pixels per frame (5 seconds * 60 FPS)
+    train_speed = 5
     
     train = pygame.Rect(initial_train_x, train_y, train_width, train_height)
     top_platform = pygame.Rect([0, 0, 1280, 200])
