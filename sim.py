@@ -1,6 +1,9 @@
 import pygame
 import random
 
+def calculate_distance(x, y):
+    return (x**2 + y**2) ** 0.5
+
 def collision(passenger_positions, waiter_positions, collision_radius=20):
     # Check collision between passengers and waiters
     for passenger_pos in passenger_positions:
@@ -8,7 +11,7 @@ def collision(passenger_positions, waiter_positions, collision_radius=20):
             # Calculate distance between passenger and waiter
             distance_x = abs(passenger_pos[0] - waiter_pos[0])
             distance_y = abs(passenger_pos[1] - waiter_pos[1])
-            distance = ((distance_x ** 2) + (distance_y ** 2)) ** 0.5
+            distance = calculate_distance(distance_x, distance_y)
 
             # Check if the distance is less than the sum of their collision radii
             if distance < collision_radius * 2:
@@ -24,6 +27,16 @@ def update_train_pos(train, target_train_x, train_speed):
 
 def move_waiter(waiter_positions, seat_positions, center, waiter_speed, train):
     for i, pos in enumerate(waiter_positions):
+        distance_y = abs(pos[0] - train.y - 510)
+
+        # Calculate distance to left entrance door
+        distance_x_left = abs(pos[0] - train.x - 105)
+        distance_left = calculate_distance(distance_x_left, distance_y)
+
+        # Calculate distance to right entrance door
+        distance_x_right = abs(pos[0] - train.x - 885)
+        distance_right = calculate_distance(distance_x_right, distance_y)
+
         if center[i]:
             if pos[0] < seat_positions[i][0] + 23:
                 pos[0] += waiter_speed[i]
@@ -34,7 +47,7 @@ def move_waiter(waiter_positions, seat_positions, center, waiter_speed, train):
                     pos[1] += waiter_speed[i]
                 elif pos[1] > seat_positions[i][1] + 27:
                     pos[1] -= waiter_speed[i]
-        elif i < len(waiter_positions) // 2:
+        elif distance_left <= distance_right:
             # Move to the left entrance door
             if pos[0] > train.x + 110:
                 pos[0] -= waiter_speed[i]
@@ -46,17 +59,26 @@ def move_waiter(waiter_positions, seat_positions, center, waiter_speed, train):
                     center[i] = True 
         else:
             # Move to the right entrance door
-            if pos[0] < train.x + 885:
+            if pos[0] < train.x + 880:
                 pos[0] += waiter_speed[i]
             elif pos[0] > train.x + 890:
                 pos[0] -= waiter_speed[i]
-            elif pos[0] <= train.x + 890 and pos[0] >= train.x + 885:
+            elif pos[0] <= train.x + 890 and pos[0] >= train.x + 880:
                 pos[1] -= waiter_speed[i]
                 if pos[1] >= train.y + 148 and pos[1] <= train.y + 152:
                     center[i] = True
 
 def move_passenger(passenger_positions, center_p, train, passenger_speed):
     for i, pos in enumerate(passenger_positions):
+        distance_y = abs(pos[0] - train.y - 210)
+
+        # Calculate distance to left exit door
+        distance_x_left = abs(pos[0] - train.x - 105)
+        distance_left = calculate_distance(distance_x_left, distance_y)
+
+        # Calculate distance to right exit door
+        distance_x_right = abs(pos[0] - train.x - 885)
+        distance_right = calculate_distance(distance_x_right, distance_y)
         if not center_p[i]:
             if pos[1] < train.y + 148:
                 pos[1] += passenger_speed[i]
@@ -64,7 +86,7 @@ def move_passenger(passenger_positions, center_p, train, passenger_speed):
                 pos[1] -= passenger_speed[i]
             elif pos[1] >= train.y + 148 and pos[1] <= train.y + 152:   
                 center_p[i] = True
-        elif i < len(passenger_positions) // 2:
+        elif distance_left <= distance_right:
             # Move to the left exit door
             if pos[0] > train.x + 110:
                 pos[0] -= passenger_speed[i]
@@ -104,7 +126,7 @@ def main():
     open_door_color = pygame.Color(0, 255, 0)
     closed_door_color = pygame.Color(255, 0, 0)
 
-    passenger_positions = [
+    full_passenger_positions = [
         [180, 240], [180, 300], [180, 420], [180, 480],
         [330, 240], [330, 300], [330, 420], [330, 480],
         [400, 240], [400, 300], [400, 420], [400, 480],
@@ -118,6 +140,9 @@ def main():
         [950, 240], [950, 300], [950, 420], [950, 480],
         [1100, 240], [1100, 300], [1100, 420], [1100, 480]
     ]
+
+    # Randomize the quantity of waiter positions
+    passenger_positions = random.sample(full_passenger_positions, random.randint(1, len(full_passenger_positions)))
 
     seat_positions = [
         [155, 215], [155, 275], [155, 395], [155, 455],
@@ -134,7 +159,7 @@ def main():
         [1075, 215], [1075, 275], [1075, 395], [1075, 455]
     ]
 
-    waiter_positions = [
+    full_waiter_positions = [
         [140, 590], [140, 630], [140, 670],
         [180, 590], [180, 630], [180, 670], 
         [220, 590], [220, 630], [220, 670], 
@@ -153,6 +178,9 @@ def main():
         [1140, 590], [1140, 630], [1140, 670]
     ]
 
+    # Randomize the quantity of waiter positions
+    waiter_positions = random.sample(full_waiter_positions, random.randint(1, len(full_waiter_positions)))
+
     center = [False for i in range(48)] 
     center_p = [False for i in range(48)]
 
@@ -167,6 +195,16 @@ def main():
 
     # Define font for the message
     font = pygame.font.Font(None, 36)
+
+    # Copy the seat positions
+    available_seats = seat_positions.copy()
+    assigned_seats = []
+
+    # Assign every waiter to a random seats
+    for _ in waiter_positions:
+        seat = random.choice(available_seats)
+        assigned_seats.append(seat)
+        available_seats.remove(seat)
 
     while running:
         # Poll for events
@@ -196,7 +234,7 @@ def main():
                 pygame.draw.line(screen, open_door_color, [train.x + 90, 510], [train.x + 140, 510], 5)
                 pygame.draw.line(screen, open_door_color, [train.x + 860, 510], [train.x + 910, 510], 5)
                 if reached_target:
-                    move_waiter(waiter_positions, seat_positions, center, waiter_speed, train)
+                    move_waiter(waiter_positions, assigned_seats, center, waiter_speed, train)
 
             # Draw the platform
             pygame.draw.rect(screen, pygame.Color(20, 20, 20), top_platform)
