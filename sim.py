@@ -222,7 +222,7 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT or (event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE):
                 running = False
-            if reached_target and event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
+            if not paused and reached_target and event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
                 open_entrance = True
             if event.type == pygame.KEYUP and event.key == pygame.K_p:
                 paused = not paused
@@ -291,8 +291,11 @@ def main():
                 # Display message on screen
                 message = font.render("Collision between passenger and waiter!", True, (255, 255, 255))
                 screen.blit(message, (400, 50))  # Adjust position as needed
-                paused = True
                 collided = True
+        else:
+            # Display message on screen
+            message = font.render("PAUSED", True, (255, 255, 255))
+            screen.blit(message, (640, 360))  # Adjust position as needed
 
         # Flip the display to put your work on screen
         pygame.display.flip()
