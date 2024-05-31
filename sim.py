@@ -181,11 +181,24 @@ def main():
     # Randomize the quantity of waiter positions
     waiter_positions = random.sample(full_waiter_positions, random.randint(1, len(full_waiter_positions)))
 
+    # Variable to check if the waiter is already reach the center of the train
     center = [False for i in range(48)] 
+
+    # Variable to check if the passenger is already reach the center of the train
     center_p = [False for i in range(48)]
 
-    passenger_speed = [random.randint(1, 3) for i in range(48)]
-    waiter_speed = [random.randint(1, 3) for i in range(48)]
+    # Assign random speed to passengers and waiters
+    passenger_speed = [random.randint(1, 3) for i in range(len(passenger_positions))]
+    waiter_speed = [random.randint(1, 3) for i in range(len(waiter_positions))]
+
+    # Define person color by speed
+    person_colors = [pygame.Color(255, 50, 0), pygame.Color(255, 150, 0), pygame.Color(255, 255, 0)]
+
+    # Assign color to each passenger
+    passenger_color = [person_colors[i-1] for i in passenger_speed]
+    
+    # Assign color to each waiter
+    waiter_color = [person_colors[i-1] for i in waiter_speed]
 
     reached_target = False
 
@@ -263,16 +276,16 @@ def main():
                 pygame.draw.line(screen, closed_door_color, [train.x + 860, 210], [train.x + 910, 210], 5)
 
             # Draw the passengers
-            for pos in passenger_positions:
+            for i,pos in enumerate(passenger_positions):
                 # Adjust passenger positions relative to the moving train
                 adjusted_pos = [pos[0] + (train.x - target_train_x), pos[1]]
                 # Draw passenger
-                pygame.draw.circle(screen, pygame.Color(0, 255, 0), adjusted_pos, passenger_radius)
+                pygame.draw.circle(screen, passenger_color[i], adjusted_pos, passenger_radius)
 
             # Draw the waiting passengers
-            for pos in waiter_positions:
+            for i,pos in enumerate(waiter_positions):
                 # Draw waiting passenger
-                pygame.draw.circle(screen, pygame.Color(0, 0, 255), pos, passenger_radius)
+                pygame.draw.circle(screen, waiter_color[i], pos, passenger_radius)
 
             if collision(passenger_positions, waiter_positions):
                 # Display message on screen
