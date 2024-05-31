@@ -202,6 +202,8 @@ def main():
 
     paused = False
 
+    collided = False
+
     # Define font for the message
     font = pygame.font.Font(None, 36)
 
@@ -218,14 +220,14 @@ def main():
     while running:
         # Poll for events
         for event in pygame.event.get():
-            if event.type == pygame.QUIT or (paused and event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE):
+            if event.type == pygame.QUIT or (event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE):
                 running = False
             if reached_target and event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
                 open_entrance = True
             if event.type == pygame.KEYUP and event.key == pygame.K_p:
                 paused = not paused
 
-        if not paused:
+        if not paused and not collided:
             # Fill the screen with a color to wipe away anything from last frame
             screen.fill(pygame.Color(150, 75, 0))
 
@@ -290,6 +292,7 @@ def main():
                 message = font.render("Collision between passenger and waiter!", True, (255, 255, 255))
                 screen.blit(message, (400, 50))  # Adjust position as needed
                 paused = True
+                collided = True
 
         # Flip the display to put your work on screen
         pygame.display.flip()
