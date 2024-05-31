@@ -192,7 +192,7 @@ def main():
     waiter_speed = [random.randint(1, 3) for i in range(len(waiter_positions))]
 
     # Define person color by speed
-    person_colors = [pygame.Color(255, 50, 0), pygame.Color(255, 150, 0), pygame.Color(255, 255, 0)]
+    person_colors = [pygame.Color(255, 127, 0), pygame.Color(255, 63, 0), pygame.Color(255, 0, 0)]
 
     # Assign color to each passenger
     passenger_color = [person_colors[i-1] for i in passenger_speed]
@@ -229,10 +229,10 @@ def main():
 
         if not paused:
             # Fill the screen with a color to wipe away anything from last frame
-            screen.fill("grey")
+            screen.fill(pygame.Color(150, 75, 0))
 
             # Draw the train
-            pygame.draw.rect(screen, pygame.Color(255, 0, 0), train)
+            pygame.draw.rect(screen, pygame.Color(255, 253, 100), train)
 
             # Update train position
             update_train_pos(train, target_train_x, train_speed)
@@ -262,7 +262,7 @@ def main():
                 # Adjust seat positions relative to the moving train
                 seat_rect = pygame.Rect([pos[0] + (train.x - target_train_x), pos[1], seat_size[0], seat_size[1]])
                 # Draw seat
-                pygame.draw.rect(screen, pygame.Color(200, 200, 200), seat_rect)
+                pygame.draw.rect(screen, pygame.Color(200, 200, 100), seat_rect)
 
             # Move passengers to exit if the train has reached the target position
             if reached_target:
