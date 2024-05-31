@@ -27,15 +27,11 @@ def update_train_pos(train, target_train_x, train_speed):
 
 def move_waiter(waiter_positions, seat_positions, center, waiter_speed, train):
     for i, pos in enumerate(waiter_positions):
-        distance_y = abs(pos[0] - train.y - 510)
-
         # Calculate distance to left entrance door
         distance_x_left = abs(pos[0] - train.x - 105)
-        distance_left = calculate_distance(distance_x_left, distance_y)
 
         # Calculate distance to right entrance door
         distance_x_right = abs(pos[0] - train.x - 885)
-        distance_right = calculate_distance(distance_x_right, distance_y)
 
         if center[i]:
             if pos[0] < seat_positions[i][0] + 23:
@@ -47,7 +43,7 @@ def move_waiter(waiter_positions, seat_positions, center, waiter_speed, train):
                     pos[1] += waiter_speed[i]
                 elif pos[1] > seat_positions[i][1] + 27:
                     pos[1] -= waiter_speed[i]
-        elif distance_left <= distance_right:
+        elif distance_x_left <= distance_x_right:
             # Move to the left entrance door
             if pos[0] > train.x + 110:
                 pos[0] -= waiter_speed[i]
