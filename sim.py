@@ -218,10 +218,12 @@ def main():
     while running:
         # Poll for events
         for event in pygame.event.get():
-            if event.type == pygame.QUIT or (paused and event.type == pygame.KEYUP):
+            if event.type == pygame.QUIT or (paused and event.type == pygame.KEYUP and event.key == pygame.K_ESCAPE):
                 running = False
             if reached_target and event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
                 open_entrance = True
+            if event.type == pygame.KEYUP and event.key == pygame.K_p:
+                paused = not paused
 
         if not paused:
             # Fill the screen with a color to wipe away anything from last frame
